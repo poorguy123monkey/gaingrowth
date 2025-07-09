@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GainGrowth Panel</title>
+  <!-- HEAD CONTENT OMITTED FOR BREVITY -->
+</head>
+<body>
+  <!-- BODY CONTENT OMITTED FOR BREVITY -->
+
+  <script>
+    // THEME TOGGLE, ORDER HISTORY, TOAST SYSTEM OMITTED
+
+    // FORM LOGIC
+    const orderForm = document.getElementById('orderForm');
+    const youtubeUrlInput = document.getElementById('youtubeUrl');
+    const serviceTypeInput = document.getElementById('serviceType');
+    const quantityInput = document.getElementById('quantity');
+    const quantityRange = document.getElementById('quantityRange');
+    const orderTotal = document.getElementById('orderTotal');
+    const urlError = document.getElementById('urlError');
+    const quantityError = document.getElementById('quantityError');
+    const orderProgress = document.getElementById('orderProgress');
+
+    const priceMap = {
+      subscribers: 9.99,
+      likes: 4.99,
+      views: 2.99
+    };
+    function updateOrderTotal(quantity, serviceType) {
+      const pricePerThousand = priceMap[serviceType] || 9.99;
+      const total = (quantity / 1000) * pricePerThousand;
+      orderTotal.textContent = total.toFixed(2);
+    }
+    function syncQuantityInputs(val) {
+      val = Math.max(100, Math.min(50000, parseInt(val) || 100));
+      quantityInput.value = val.toLocaleString();
+      quantityRange.value = val;
+      updateOrderTotal(val, serviceTypeInput.value);
+    }
+    orderForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const youtubeUrl = youtubeUrlInput.value.trim();
+      const serviceType = serviceTypeInput.value;
+      const quantity = parseInt(quantityInput.value.replace(/,/g, ''));
+      let valid = true;
+      if (!youtubeUrl || !serviceType || !quantity) {
+        showToast("Please fill in all fields.", "error");
+        return;
+      }
+      orderProgress.classList.add('active');
+      const btn = document.getElementById('placeOrderBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch('https://GainGrowthPanel.richflexings.repl.co/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ serviceType, youtubeUrl, quantity })
+        });
+        const result = await res.json();
+        if (res.ok && result.order) {
+          showToast('✅ Order placed successfully!', 'success');
+        } else {
+          throw new Error(result.message || 'Order failed.');
+        }
+      } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+      }
+      orderProgress.classList.remove('active');
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>
